@@ -1,2 +1,0 @@
-2026-02-09 14:37:40,545 - ERROR - Expecting value: line 1 column 1 (char 0)
-2026-02-09 14:38:09,156 - ERROR - Wrong Input in user_input() could not convert string to float: 'gvg'

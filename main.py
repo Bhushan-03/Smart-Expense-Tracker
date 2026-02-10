@@ -1,14 +1,20 @@
 from datetime import datetime
 from tabulate import tabulate
 from logger import log_error
-import expense as Expense, file_handler, analytics, export_handler
+import analytics, export_handler, database_handler
 
+database_handler.create_expense_table()
 
-category:dict = {1:"food",2:"transport",3:"shopping",4:"bills",5:"entertainment",6:"health",7:"education",8:"investment",9:"Travel",10:"other"}
+category:dict = {1:"food",2:"transport",3:"shopping",4:"bills",5:"entertainment",6:"health",7:"education",8:"investment",9:"travel",10:"other"}
 
-
-def cat_choice(choice:int):
+def cat_choice(choice):
     return category.get(choice, None)
+
+def category_menu():
+    category_options = int(input("\nChoose Category \n1. Food \n2. Transport \n3. Shopping \n4. Bills \n5. Entertainment \n6. Health \n7. Education \n8. Investment \n9. Travel \n10. Other \nChoose your expense category: "))
+    return cat_choice(category_options)
+
+
 
 def user_input():
     try:
@@ -16,9 +22,8 @@ def user_input():
         if (amount <= 0):
             print("\nAmount must be greater than zero")
             return None
-        category_options = int(input("\nChoose Category \n1. Food \n2. Transport \n3. Shopping \n4. Bills \n5. Entertainment \n6. Health \n7. Education \n8. Investment \n9. Travel \n10. Other \nChoose your expense category: "))
-        category = cat_choice(category_options)
-        if category is None:
+        selected_category = category_menu()
+        if selected_category is None:
             print("\nInvalid Category Chioce!!!")
             return None
         description:str = input("\nWrite short description: ")
@@ -35,7 +40,7 @@ def user_input():
             log_error(f"Invalid Date format {e}")
             print("\nInvalid Date ❌")
             return None
-        return amount,category.lower(),description,date
+        return amount,selected_category,description,date
     except ValueError as e:
         log_error(f"Wrong Input in user_input() {e}")
         print(f"{e}, WRONG INPUT!!!")
@@ -46,37 +51,10 @@ def table_form_display(exp):
     if not exp:
         print("\nNo Expense Found!!!")
         return
-
     print(tabulate(exp,headers="keys",tablefmt="grid"))
 
 def display_expense(exp):
-    table_form_display(exp)
-
-def dis_exp_by_category(exp, category):
-    print(f"\n---------- EXPENSES BY CATEGORY ({category}) ----------")
-    exp_list =  [item for item in exp if item["category"] == category.lower()]
-    if exp_list:
-        table_form_display(exp_list)
-    else:
-        print("\nNo Expense Found for this Category")
-        return None   
-
-def dis_exp_by_date(exp,date):
-    print(f"\n---------- EXPENSES BY DATE ({date}) ----------")
-    exp_list = [item for item in exp if item["date"] == date]
-    if exp_list:
-        table_form_display(exp_list)
-    else:
-        print("\nNo expense found for this date")
-        return False    
-
-def dis_exp_by_month(exp,month):
-    print(f"\n---------- EXPENSES BY MONTH {month} ----------")
-    exp_list = [item for item in exp if datetime.strptime(item["date"], "%Y-%m-%d").month == month]
-    if exp_list:
-        table_form_display(exp_list)
-    else:
-        print("\nNo Expense Found for this Month")        
+    table_form_display(exp)       
 
 def sorted_expenses_by_date(exp:list):
     return sorted(exp, key= lambda x: datetime.strptime(x["date"], "%Y-%m-%d"))
@@ -88,41 +66,6 @@ def check_expid(exp:list,exp_id:int):
         return False
     table_form_display(exp_list)
     return True
-        
-
-
-def update_expense(exp,exp_id,field,new_value):
-    found = False
-    for item in exp:
-        if item["id"] == exp_id:
-            item[field] = new_value
-            found = True
-    return found, exp
-
-
-def update_expense_all(exp,exp_id,new_amount,new_category,new_description,new_date):
-    found = False
-    for item in exp:
-        if item["id"] == exp_id:
-            item["amount"] = new_amount
-            item["category"] = new_category
-            item["description"] = new_description
-            item["date"] = str(new_date)
-            found = True
-    return found, exp
-
-        
-def delete_expense(exp,exp_id):
-    expense = [item for item in exp if item["id"] != exp_id]
-    return expense
-
-def manage_id(exp):
-    eid = 1
-    for item in exp:
-        item["id"] = eid
-        eid += 1
-    file_handler.save_expenses(exp)
-
 
 def delete_y_n(delete_or_not):
     if (delete_or_not.lower()) == "y" or (delete_or_not.lower().startswith("y")):
@@ -168,24 +111,20 @@ while True:
         choice:int = int(input("\n1.Add Expense\n2.View Expenses\n3.Update Expense\n4.Delete Expense\n5.Reports and Analytics\n6.Export Reports\n7.Exit\nEnter your choice: "))
         match choice:
             case 1:
-                eid = file_handler.generate_id()
                 print("\n\n---------- Adding New Expense ----------")
                 data = user_input()
                 if data is None:
                     continue
-                amount,category,description,date = data
-                expense_dict = Expense.Expense(eid,amount,category,description,date).to_dict()
-                exp = file_handler.load_expense()
-                exp.append(expense_dict)
-                file_handler.save_expenses(exp)
+                amount,selected_category,description,date = data
+                database_handler.add_expense(amount,selected_category,description,date)
                 print("\nExpense Added Successfully ✅")
             case 2:
-                exp = file_handler.load_expense()
+                exp = database_handler.get_all_expenses()
                 if not exp:
                     print("\nNo Expense Available!!!")
                     continue
                 print("\n\n---------- Showing Expense ----------")
-                sub_choice:int = int(input("\n1.View All Expenses\n2.View By Category\n3.View By Date\n4.View By Month\nEnter your choice: "))
+                sub_choice:int = int(input("\n1.View All Expenses\n2.View By Category\n3.View By Date\n4.View By Month\n5.Search by Description\n6.Search by Category and Description\nEnter your choice: "))
                 match sub_choice:
                     case 1:
                         expense_sequence = int(input("\nIn which sequence you want all expenses?\n1.ID wise\n2.Date wise\nEnter choice: "))
@@ -199,14 +138,9 @@ while True:
                         else:
                             print("\nPLEASE CHOOSE BETWEEN GIVEN OPTIONS!!!")
                     case 2:
-                        try:
-                            category_options = int(input("\nChoose Category \n1. Food \n2. Transport \n3. Shopping \n4. Bills \n5. Entertainment \n6. Health \n7. Education \n8. Investment \n9. Travel \n10. Other \nChoose your expense category: "))
-                        except Exception:
-                            print("\nWRONG INPUT!!!")
-                            continue
-                        category = cat_choice(category_options)
-                        sorted_exp = sorted_expenses_by_date(exp)
-                        dis_exp_by_category(sorted_exp,category)
+                        selected_category = category_menu()
+                        expense_by_category = database_handler.get_expense_by_category(selected_category)
+                        table_form_display(expense_by_category)
                     case 3:
                         exp_date = input("\nEnter Expense Date (YYYY-MM-DD): ")
                         if not exp_date:
@@ -217,22 +151,32 @@ while True:
                         except ValueError:
                             print("\nInvalid Date ❌")
                             continue
-                        dis_exp_by_date(exp,exp_date)
+                        expense_by_date = database_handler.get_expense_by_date(exp_date)
+                        table_form_display(expense_by_date)
                     case 4:
                         try:
-                            sorted_exp = sorted_expenses_by_date(exp)
                             exp_month:int = int(input("\nEnter Expense Month (1-12): "))
-                            if (exp_month <= 0) or (exp_month >= 13):
+                            if (exp_month <= 0) or (exp_month > 12):
                                 print("\nError!!!\nMonth must in between 1 to 12")
                             else:
-                                dis_exp_by_month(sorted_exp,exp_month)
+                                expense_by_month = database_handler.get_expense_by_month(exp_month)
+                                table_form_display(expense_by_month)
                         except Exception:
                             print("\nWRONG INPUT!!!")
+                    case 5:
+                        keyword = input("\nEnter search keyword: ")
+                        result = database_handler.search_expense(keyword)
+                        table_form_display(result)
+                    case 6:
+                        selected_category = category_menu()
+                        keyword = input("\nEnter search keyword: ")
+                        result = database_handler.search_expense_by_category_keyword(selected_category,keyword)
+                        table_form_display(result)
                     case _:
                         print("\nWRONG CHOICE!!!")
                         continue
             case 3:
-                exp = file_handler.load_expense()
+                exp = database_handler.get_all_expenses()
                 if not exp:
                     print("\nNo Expense Available!!!")
                     continue
@@ -252,38 +196,25 @@ while True:
                             if new_amount <= 0:
                                 print("\nAmount should be greater that zero!!")
                                 continue
-                            res, after_update_exp = update_expense(exp,exp_id, field,new_amount)
-                            if res:
-                                file_handler.save_expenses(after_update_exp)
-                                print("\nAmount Updated Successfully ✅")
-                            else:
-                                print("\nSomething went Wrong!!!")
+                            database_handler.update_expense(exp_id,field,new_amount)
+                            print("\nAmount Updated Successfully ✅")
                             
                         case 2:
                             print("\n---------- Updating Expense Category ----------")
                             field = "category"
-                            category_options = int(input("\nChoose Category \n1. Food \n2. Transport \n3. Shopping \n4. Bills \n5. Entertainment \n6. Health \n7. Education \n8. Investment \n9. Travel \n10. Other \nChoose your expense category: "))
-                            new_category = cat_choice(category_options)
+                            new_category = category_menu()
                             if new_category == None:
                                 print("Invalid Choice")
                                 continue
-                            res, after_update_exp = update_expense(exp,exp_id,field,new_category)
-                            if res:
-                                file_handler.save_expenses(after_update_exp)
-                                print("\nCategory Updated Successfully ✅")
-                            else:
-                                print("\nSomething went Wrong!!!")
+                            database_handler.update_expense(exp_id,field,new_category)
+                            print("\nCategory Updated Successfully ✅")
 
                         case 3:
                             print("\n---------- Updating Expense Description ----------")
                             field = "description"
                             new_description = input("\nEnter new Description for Expense: ")
-                            res, after_update_exp = update_expense(exp,exp_id,field,new_description)
-                            if res:
-                                file_handler.save_expenses(after_update_exp)
-                                print("\nDescription Updated Successfully ✅")
-                            else:
-                                print("\nSomething went Wrong!!!")
+                            database_handler.update_expense(exp_id,field,new_description)
+                            print("\nDescription Updated Successfully ✅")
 
                         case 4:
                             print("\n---------- Updating Expense Date ----------")
@@ -294,13 +225,8 @@ while True:
                                     print("\nAs you didn't enter date, current date will be taken as default")
                                     new_date_str = str(datetime.now().strftime("%Y-%m-%d"))
                                 new_date = datetime.strptime(new_date_str, "%Y-%m-%d").date()
-                                res, after_update_exp = update_expense(exp,exp_id,field,str(new_date))
-                                if res:
-                                    file_handler.save_expenses(after_update_exp)
-                                    print("\nDate Updated Successfully ✅")
-                                else:
-                                    print("\nSomething went Wrong!!!")
-
+                                database_handler.update_expense(exp_id,field,str(new_date))
+                                print("\nDate Updated Successfully ✅")
                             except ValueError:
                                 print("\nInvalid Date!!!\nDate format must be like (YYYY-MM-DD)")
                             
@@ -310,12 +236,8 @@ while True:
                             if data is None:
                                 continue
                             new_amount,new_category,new_description,new_date = data
-                            res, after_update_exp = update_expense_all(exp,exp_id,new_amount,new_category,new_description,new_date)
-                            if res:
-                                file_handler.save_expenses(after_update_exp)
-                                print("\nExpese Updated Successfully ✅")
-                            else:
-                                print("\nSomething went Wrong!!!")
+                            database_handler.update_full_expense(exp_id,new_amount,new_category,new_description,new_date)
+                            print("\nExpese Updated Successfully ✅")
 
                 elif (choice.lower()) == "n" or (choice.lower().startswith("n")):
                     continue
@@ -323,7 +245,7 @@ while True:
                     print("\nWrong choice!!!")
 
             case 4:
-                exp = file_handler.load_expense()
+                exp = database_handler.get_all_expenses()
                 if not exp:
                     print("\nNo Expense Available!!!")
                     continue
@@ -338,8 +260,7 @@ while True:
                         delete_or_not = input("\nDo you want to delete this Expense (Y/N): ")
                         decision = delete_y_n(delete_or_not)
                         if decision == True:
-                            after_delete = delete_expense(exp,exp_id)
-                            manage_id(after_delete)
+                            database_handler.delete_expense(exp_id)
                             print("\nExpense Deleted Successfully ✅")
                         elif decision == False:
                             print("\nDeletion Cancelled!!!")
@@ -353,8 +274,7 @@ while True:
                         delete_or_not = input("\nDo you want to delete this Expense (Y/N): ")
                         decision = delete_y_n(delete_or_not)
                         if decision == True:
-                            after_delete = delete_expense(exp,1)
-                            manage_id(after_delete)
+                            database_handler.delete_expense(1)
                             print("\nFirst Expense Deleted Successfully ✅")
                         elif decision == False:
                             print("\nDeletion Cancelled!!!")
@@ -369,8 +289,7 @@ while True:
                         delete_or_not = input("\nDo you want to delete this Expense (Y/N): ")
                         decision = delete_y_n(delete_or_not)
                         if decision == True:
-                            after_delete = delete_expense(exp,int(last_id))
-                            manage_id(after_delete)
+                            database_handler.delete_expense(last_id)
                             print("\nLast Expense Deleted Successfully ✅")
                         elif decision == False:
                             print("\nDeletion Cancelled!!!")
@@ -378,11 +297,11 @@ while True:
                         else:
                             print("\nWrong Choice!!!")
                             continue
-
                     case _:
                         print("\nWRONG CHOICE !!!")
+
             case 5:
-                exp = file_handler.load_expense()
+                exp = database_handler.get_all_expenses()
                 if not exp:
                     print("\nNo Expense Available!!!")
                     continue
@@ -397,13 +316,11 @@ while True:
                         print("\n---------- Category wise Expense Report ----------\n")
                         category_report = analytics.category_summary(exp)
                         sorted_category_report = dict(sorted(category_report.items(), key= lambda x: x[1], reverse=True))
-                        for key, value in sorted_category_report.items():
-                            print(f"{key}: ₹{value}")
+                        print(tabulate([sorted_category_report],headers="keys",tablefmt="grid"))
                     case 3:
                         print("\n---------- Month wise Expense Report ----------")
                         month_report = analytics.monthly_summary(exp)
-                        for key, value in month_report.items():
-                            print(f"{key}: ₹{value}")
+                        print(tabulate([month_report],headers="keys",tablefmt="grid"))
                     case 4:
                         print("\n---------- Highest Expense Report ----------")
                         hig_expense = analytics.highest_expense(exp)
@@ -424,7 +341,7 @@ while True:
                         print("\nWRONG CHOICE !!!")
 
             case 6:
-                exp = file_handler.load_expense()
+                exp = database_handler.get_all_expenses()
                 if not exp:
                     print("\nNo Expense Available!!!")
                     continue

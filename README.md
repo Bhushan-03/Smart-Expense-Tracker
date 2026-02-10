@@ -21,7 +21,7 @@ It allows users to add, view, update, delete, analyze and export their expense s
 
 ## Tech Stack:
 - Python
-- JSON (Data Storage)
+- SQLite (Data Storage)
 - Tabulate Library
 - CSV Module
 - Datetime module
@@ -40,12 +40,11 @@ file to run:
 Smart Expence Tracker/
 |
 |- main.py
-|- file_handler.py
-|- expense.py
+|- database_handler.py
 |- analytics.py
 |- export_handler.py
 |- logger.py
-|- expenses.json
+|- expenses.db
 |- error.log
 |- README.md
 
@@ -58,7 +57,6 @@ Smart Expence Tracker/
 
 
 ## Future Improvements:
-- Database Integration
 - GUI Version
 - Graphical Charts
 

@@ -74,41 +74,12 @@ def delete_y_n(delete_or_not):
         return False
     else:
         return None
-    
-def full_expense(exp):
-    lines = []
-    total_expense = analytics.total_expenses(exp)
-    lines.append(f"\nYour total expense is ₹{total_expense}")
-
-    avg_expense = analytics.average_expense(exp)
-    lines.append(f"\n\nAverage Expense is ₹{avg_expense:.2f}")
-
-    category_report = analytics.category_summary(exp)
-    sorted_category_report = dict(sorted(category_report.items(), key= lambda x: x[1], reverse=True))
-    lines.append("\n\nCategory Summary:")
-    for key, value in sorted_category_report.items():
-        lines.append(f"\n{key}: ₹{value}")        
-
-    month_report = analytics.monthly_summary(exp)
-    lines.append("\n\nMonthly Summary:")
-    for key, value in month_report.items():
-        lines.append(f"\n{key}: ₹{value}")
-
-    hig_expense = analytics.highest_expense(exp)
-    lines.append("\n\nHighest Expense:")
-    lines.append(f"\nid : {hig_expense['id']}"
-            f"\namount : {hig_expense['amount']}"
-            f"\ncategory : {hig_expense['category']}"
-            f"\ndate : {hig_expense['date']}"
-        )
-    
-    return "".join(lines)
 
 
 while True:
     try:
         print("\n********** SMART EXPENSE TRACKER **********")
-        choice:int = int(input("\n1.Add Expense\n2.View Expenses\n3.Update Expense\n4.Delete Expense\n5.Reports and Analytics\n6.Export Reports\n7.Exit\nEnter your choice: "))
+        choice:int = int(input("\n1.Add Expense\n2.View Expenses\n3.Update Expense\n4.Delete Expense\n5.Reports and Analytics\n6.Export Reports\n7.Backup Database\n8.Exit\nEnter your choice: "))
         match choice:
             case 1:
                 print("\n\n---------- Adding New Expense ----------")
@@ -306,7 +277,7 @@ while True:
                     print("\nNo Expense Available!!!")
                     continue
                 print("\n\n---------- Reports and Analysis ----------")
-                report_choice = int(input("\n1. Total Expense\n2. Category Summary\n3. Monthly Summary\n4. Highest Expense\n5. Average Expense\n6. Back\nWhat's your choice: "))
+                report_choice = int(input("\n1. Total Expense\n2. Category Summary\n3. Monthly Summary\n4. Highest Expense\n5. Average Expense\n6. Most used category\n7. Least used category\n8. Highest spending month\n9. Back\nWhat's your choice: "))
                 match report_choice:
                     case 1:
                         print("\n---------- Total Expense Report ----------")
@@ -336,6 +307,27 @@ while True:
                         else:
                             print("\nNo Expense Found")
                     case 6:
+                        print("\n---------- Most Used Category Report ----------")
+                        most_used_category = analytics.most_used_category(exp)
+                        if most_used_category:
+                            print(f"\nMost used category is: {most_used_category}")
+                        else:
+                            print("\nNo Expense Found")
+                    case 7:
+                        print("\n---------- Least Used Category Report ----------")
+                        least_used_category = analytics.least_used_category(exp)
+                        if least_used_category:
+                            print(f"\nLeast used category is: {least_used_category}")
+                        else:
+                            print("\nNo Expense Found")
+                    case 8:
+                        print("\n---------- Highest Spending Month Report ----------")
+                        highest_spending_month = analytics.highest_spending_month(exp)
+                        if highest_spending_month:
+                            print(f"\nHighest spending month is: {highest_spending_month}")
+                        else:
+                            print("\nNo Expense Found")
+                    case 9:
                         continue
                     case _:
                         print("\nWRONG CHOICE !!!")
@@ -356,15 +348,19 @@ while True:
                             print("\nSomething Went Wrong!!!")
                             continue
                     case 2:
-                        full_report = full_expense(exp)
                         export_handler.clear_file()
-                        if export_handler.export_full_report(full_report):
+                        if export_handler.full_expense_report(exp):
                             print("\nFull Report Exported to TXT file Successfully ✅")
                     case 3:
                         continue
                     case _:
                         print("\nWrong Choice!!!")
             case 7:
+                if export_handler.backup_database():
+                    print("\nBackup Created Successfully ✅")
+                else:
+                    print("\nBackup Failed!!!")
+            case 8:
                 break
             case _:
                 print("\nWRONG INPUT !!!")

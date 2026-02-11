@@ -32,3 +32,27 @@ def average_expense(exp:list) -> float:
     if not exp:
         return 0
     return total_expenses(exp) / len(exp)
+
+def most_used_category(exp):
+    if not exp:
+        return None
+    count = {}
+    for item in exp:
+        cat = item["category"]
+        count[cat] = count.get(cat,0) + 1
+    return max(count, key=count.get)
+
+def least_used_category(exp):
+    if not exp:
+        return None
+    count = {}
+    for item in exp:
+        cat = item["category"]
+        count[cat] = count.get(cat,0) + 1
+    return min(count, key=count.get)
+
+def highest_spending_month(exp):
+    monthly = monthly_summary(exp)
+    if not monthly:
+        return None
+    return max(monthly, key=monthly.get)

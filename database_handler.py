@@ -18,6 +18,8 @@ def create_expense_table():
                     date TEXT NOT NULL
             )
         """)
+        cursor.execute("""CREATE INDEX IF NOT EXISTS idx_category ON expenses(category)""")
+        cursor.execute("""CREATE INDEX IF NOT EXISTS idx_date ON expenses(date)""")
         conn.commit()
         conn.close()
     except sqlite3.Error as e:
@@ -62,6 +64,9 @@ def update_expense(exp_id,field,new_value):
     try:
         conn = connect_db()
         cursor = conn.cursor()
+        allowed_fields = ["amount", "category", "description", "date"]
+        if field not in allowed_fields:
+            return
         query = f"UPDATE expenses SET {field} = ? WHERE id = ?"
         cursor.execute(query,(new_value,exp_id))
         conn.commit()

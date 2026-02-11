@@ -6,17 +6,15 @@ It allows users to add, view, update, delete, analyze and export their expense s
 
 
 ## Features:
-- Add Expense
-- View Expense
-- Update Expense
-- Delete Expense
-- Expense Analytics
-- Monthly Summary
-- Category Summary
-- Export Report (TXT & CSV)
-- Table UI
-- Error Logging System
-- Data Storage (SQLite)
+- Add / View / Update / Delete Expenses
+- SQLite Database Storage
+- SQL Filtering
+- Keyword Search
+- Expense Analytics Dashboard
+- CSV Export
+- TXT Report Export
+- Database Backup
+- Table Display
 
 
 ## Tech Stack:
@@ -25,6 +23,7 @@ It allows users to add, view, update, delete, analyze and export their expense s
 - Tabulate Library
 - CSV Module
 - Datetime module
+- Logging
 
 
 ## Installation:
@@ -41,6 +40,7 @@ Smart Expence Tracker/
 |
 |- main.py
 |- database_handler.py
+|- expense.py
 |- analytics.py
 |- export_handler.py
 |- logger.py

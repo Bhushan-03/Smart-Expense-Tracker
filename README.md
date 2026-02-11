@@ -16,7 +16,7 @@ It allows users to add, view, update, delete, analyze and export their expense s
 - Export Report (TXT & CSV)
 - Table UI
 - Error Logging System
-- Data Storage (Json)
+- Data Storage (SQLite)
 
 
 ## Tech Stack:

@@ -1,3 +1,4 @@
+from logger import log_error
 import sqlite3
 
 database_name = "expenses.db"
@@ -9,7 +10,7 @@ def create_expense_table():
     try:
         conn = connect_db()
         cursor = conn.cursor()
-        cursor.execute("""
+        query = """
             CREATE TABLE IF NOT EXISTS expenses (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     amount REAL NOT NULL,
@@ -17,12 +18,14 @@ def create_expense_table():
                     description TEXT NOT NULL,
                     date TEXT NOT NULL
             )
-        """)
+        """
+        cursor.execute(query)
         cursor.execute("""CREATE INDEX IF NOT EXISTS idx_category ON expenses(category)""")
         cursor.execute("""CREATE INDEX IF NOT EXISTS idx_date ON expenses(date)""")
         conn.commit()
         conn.close()
     except sqlite3.Error as e:
+        log_error(f"Database Error {e}")
         print("\nDatabase Error: ",e)
 
 
@@ -34,6 +37,7 @@ def add_expense(amount,category,description,date):
         conn.commit()
         conn.close()
     except sqlite3.Error as e:
+        log_error(f"Database Error {e}")
         print("\nDatabase Error: ",e)
 
 def rows_to_dict(data):
@@ -58,6 +62,7 @@ def get_all_expenses():
         conn.close()
         return rows_to_dict(data)
     except sqlite3.Error as e:
+        log_error(f"Database Error {e}")
         print("\nDatabase Error: ",e)
 
 def update_expense(exp_id,field,new_value):
@@ -72,6 +77,7 @@ def update_expense(exp_id,field,new_value):
         conn.commit()
         conn.close()
     except sqlite3.Error as e:
+        log_error(f"Database Error {e}")
         print("\nDatabase Error: ",e)
 
 def update_full_expense(exp_id,new_amt,new_cat,new_des,new_date):
@@ -83,6 +89,7 @@ def update_full_expense(exp_id,new_amt,new_cat,new_des,new_date):
         conn.commit()
         conn.close()
     except sqlite3.Error as e:
+        log_error(f"Database Error {e}")
         print("\nDatabase Error: ",e)
 
 def delete_expense(exp_id):
@@ -94,6 +101,7 @@ def delete_expense(exp_id):
         conn.commit()
         conn.close()
     except sqlite3.Error as e:
+        log_error(f"Database Error {e}")
         print("\nDatabase Error: ",e)
 
 
@@ -107,6 +115,7 @@ def get_expense_by_category(exp_category):
         conn.close()
         return rows_to_dict(data)
     except sqlite3.Error as e:
+        log_error(f"Database Error {e}")
         print("\nDatabase Error: ",e)
 
 def get_expense_by_date(exp_date):
@@ -119,6 +128,7 @@ def get_expense_by_date(exp_date):
         conn.close()
         return rows_to_dict(data)
     except sqlite3.Error as e:
+        log_error(f"Database Error {e}")
         print("\nDatabase Error: ",e)   
 
 def get_expense_by_month(exp_month):
@@ -131,6 +141,7 @@ def get_expense_by_month(exp_month):
         conn.close()
         return rows_to_dict(data)
     except sqlite3.Error as e:
+        log_error(f"Database Error {e}")
         print("\nDatabase Error: ",e)
 
 def search_expense(keyword):
@@ -143,6 +154,7 @@ def search_expense(keyword):
         conn.close()
         return rows_to_dict(data)
     except sqlite3.Error as e:
+        log_error(f"Database Error {e}")
         print("\nDatabase Error: ",e)
 
 def search_expense_by_category_keyword(exp_category,keyword):
@@ -155,4 +167,5 @@ def search_expense_by_category_keyword(exp_category,keyword):
         conn.close()
         return rows_to_dict(data)
     except sqlite3.Error as e:
+        log_error(f"Database Error {e}")
         print("\nDatabase Error: ",e)
